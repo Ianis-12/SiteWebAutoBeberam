@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beberam Concept - Parc Auto Pitești | Mașini Second Hand în Rate</title>
+    
+    <meta name="google-site-verification" content="tW8n6ilckKD3_M1XD30XliRS0V9-5WHJSfd20z2jT0Y" />
+
+    <meta name="description" content="Beberam Concept - Parc auto second hand în Pitești specializat în mașini de vânzare rulate și verificate. Oferim finanțare auto și mașini în rate pentru Dacia Sandero, Stepway, Dokker, Renault Clio, Captur sau Nissan. Vizitează-ne în Pitești!">
+    <meta name="keywords" content="parc auto pitesti, masini de vanzare pitesti, masini in rate pitesti, auto second hand pitesti, auto rulate pitesti, dacia sandero stepway pitesti, dokker de vanzare, renault clio rate, captur second hand, qashqai pitesti, beberam concept pitesti">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f2f4f5;
+            margin: 0;
+            padding: 20px;
+            color: #002f34;
+        }
+
+        /* HEADER */
+        header {
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #002f34;
+            cursor: pointer;
+        }
+
+        /* STIL SPECIAL PENTRU ASCUNDERE TEXT GOOGLE SEO (INVIZIBIL PE ECRAN) */
+        .seo-ascuns-google {
+            display: none !important;
+            visibility: hidden;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+
+        /* ZONA DREAPTA HEADER: FILTRE + SOCIALS */
+        .header-dreapta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* NAVIGARE SUS */
+        .grup-filtre-pagini {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-filtru-pagina {
+            background: #f2f4f5;
+            border: 1px solid #ccc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #002f34;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-filtru-pagina.activ {
+            background: #002f34;
+            color: white;
+            border-color: #002f34;
+        }
+
+        /* ICONITE SOCIAL MEDIA */
+        .social-media-header {
+            display: flex;
+            gap: 12px;
+        }
+
+        .social-link {
+            font-size: 18px;
+            color: #4e5e65;
+            transition: color 0.2s, transform 0.2s;
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            transform: scale(1.15);
+        }
+        
+        .social-link.insta:hover { color: #e1306c; }
+        .social-link.tiktok:hover { color: #000000; }
+        .social-link.fb:hover { color: #1877f2; }
+        .social-link.yt:hover { color: #ff0000; }
+
+        /* BUTON TOGGLE FILTRE */
+        .btn-toggle-filtre {
+            display: none;
+            width: 100%;
+            padding: 12px;
+            background: #002f34;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        /* STRUCTURA PRINCIPALA */
+        .container-principal {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        /* FILTRE STANGA */
+        .box-filtre-stanga {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sectiune-filtru {
+            margin-bottom: 25px;
+        }
+
+        .sectiune-filtru h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #002f34;
+            border-bottom: 2px solid #002f34;
+            padding-bottom: 6px;
+        }
+
+        .optiune-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .optiune-checkbox input {
+            width: 16px;
+            height: 16px;
+            accent-color: #002f34;
+            cursor: pointer;
+        }
+
+        /* SUB-GRUP MODELE */
+        .sub-grup-modele {
+            margin-left: 25px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .sub-grup-modele.vizibil {
+            display: block;
+        }
+
+        /* INTERVAL INPUTS */
+        .interval-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .interval-inputs input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #002f34;
+        }
+
+        /* CATALOG ANUNTURI */
+        .container-catalog {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card-auto {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .card-auto:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .zona-foto-catalog {
+            width: 100%;
+            height: 280px;
+            background: #f8f9fa;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zona-foto-catalog img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* BADGE VIDEO DISCRET */
+        .badge-video-mini {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(220, 53, 69, 0.95);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 2;
+        }
+
+        .zona-detalii-catalog {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .titlu-anunt {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            color: #002f34;
+            line-height: 1.4;
+        }
+
+        .etichete-specifice {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .eticheta-mini {
+            background: #f2f4f5;
+            color: #4e5e65;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e6e6e6;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sub-detalii-pret-locatie {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid #f2f4f5;
+            padding-top: 12px;
+            margin-top: auto;
+        }
+
+        .locatie-anunt {
+            font-size: 13px;
+            color: #7f9799;
+            font-weight: 500;
+            padding-bottom: 2px;
+        }
+
+        /* STRUCTURA BLOC PRET REDUS */
+        .grup-preturi-catalog {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .pret-vechi-taiat {
+            font-size: 13px;
+            color: #dc3545;
+            text-decoration: line-through;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .pret-catalog {
+            font-size: 20px;
+            font-weight: 800;
+            color: #002f34;
+            line-height: 1;
+        }
+
+        .mesaj-gol {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-weight: bold;
+            color: #7f9799;
+        }
+
+        /* ===================== */
+        /* RESPONSIVE - MOBIL    */
+        /* ===================== */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            header { flex-direction: column; align-items: flex-start; padding: 15px; gap: 10px; }
+            h1 { font-size: 20px; }
+            .header-dreapta { width: 100%; justify-content: space-between; }
+            .grup-filtre-pagini { width: auto; flex-grow: 1; }
+            .btn-filtru-pagina { text-align: center; font-size: 13px; padding: 8px 10px; }
+            .btn-toggle-filtre { display: block; }
+            .container-principal { grid-template-columns: 1fr; gap: 12px; }
+            .box-filtre-stanga { position: static; padding: 15px; }
+            .continut-filtre { display: none; }
+            .continut-filtre.deschis { display: block; }
+            .container-catalog { grid-template-columns: 1fr; gap: 12px; }
+            .zona-foto-catalog { height: 240px; }
+            .pret-catalog { font-size: 18px; }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container-principal { grid-template-columns: 250px 1fr; }
+            .container-catalog { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="window.location.reload()">🚗 Beberam Concept</h1>
+        
+        <div class="header-dreapta">
+            <div class="social-media-header">
+                <a href="https://instagram.com/BeberamConcept" target="_blank" class="social-link insta" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://tiktok.com/@beberamconcept" target="_blank" class="social-link tiktok" title="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="https://facebook.com/BeberamConcept" target="_blank" class="social-link fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://youtube.com/@beberamconcept?si=WsKjxjLCMYtteCjT" target="_blank" class="social-link yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+            </div>
+
+            <div class="grup-filtre-pagini">
+                <button class="btn-filtru-pagina activ" id="btn-toate" onclick="schimbaVizualizare('toate')">Toate anunțurile</button>
+                <button class="btn-filtru-pagina" id="btn-favorite" onclick="schimbaVizualizare('favorite')">Anunțuri Favorite ❤️</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="seo-ascuns-google">
+        <h2>Parc Auto Pitești - Mașini Second Hand în Rate</h2>
+        <p>
+            Bine ai venit la Beberam Concept, destinația ta de încredere pentru mașini de vânzare în Pitești! 
+            Suntem un parc auto specializat în comercializarea de autoturisme rulate, verificate riguros și cu kilometraj certificat. 
+            Oferim posibilitatea de a cumpăra orice autoturism cash sau prin sisteme flexibile de mașini în rate (finanțare auto rapidă și credit auto în rate). 
+            Descoperă în stocul nostru modele rulate precum Dacia Sandero, Sandero Stepway, Dacia Dokker, Renault Clio, Renault Captur sau Nissan Qashqai. 
+            Te așteptăm în Pitești!
+        </p>
+    </div>
+
+    <div class="container-principal">
+
+        <aside class="box-filtre-stanga">
+            <button class="btn-toggle-filtre" onclick="toggleFiltre()">
+                ☰ Filtrează anunțurile
+            </button>
+
+            <div class="continut-filtre" id="continut-filtre">
+                <div class="sectiune-filtru">
+                    <h3>Marcă & Model</h3>
+
+                    <label class="optiune-checkbox">
+                        <input type="checkbox" class="filtru-marca" value="Dacia" onchange="gestioneazaAfisareModele(); afiseazaCatalog();">
+                        Dacia
+                    </label>
+                    <div class="sub-grup-modele" id="sub-modele-Dacia">
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Sandero" onchange="afiseazaCatalog()"> Sandero</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Stepway" onchange="afiseazaCatalog()"> Stepway</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Dokker" onchange="afiseazaCatalog()"> Dokker</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Duster" onchange="afiseazaCatalog()"> Duster</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Lodgy" onchange="afiseazaCatalog()"> Lodgy</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="MCV" onchange="afiseazaCatalog()"> MCV</label>
+                    </div>
+
+                    <label class="optiune-checkbox">
+                        <input type="checkbox" class="filtru-marca" value="Renault" onchange="gestioneazaAfisareModele(); afiseazaCatalog();">
+                        Renault
+                    </label>
+                    <div class="sub-grup-modele" id="sub-modele-Renault">
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Clio" onchange="afiseazaCatalog()"> Clio</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Captur" onchange="afiseazaCatalog()"> Captur</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Kadjar" onchange="afiseazaCatalog()"> Kadjar</label>
+                    </div>
+
+                    <label class="optiune-checkbox">
+                        <input type="checkbox" class="filtru-marca" value="Nissan" onchange="gestioneazaAfisareModele(); afiseazaCatalog();">
+                        Nissan
+                    </label>
+                    <div class="sub-grup-modele" id="sub-modele-Nissan">
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Qashqai" onchange="afiseazaCatalog()"> Qashqai</label>
+                        <label class="optiune-checkbox"><input type="checkbox" class="filtru-model" value="Qashqai+2" onchange="afiseazaCatalog()"> Qashqai+2</label>
+                    </div>
+                </div>
+
+                <div class="sectiune-filtru">
+                    <h3>Combustibil</h3>
+                    <label class="optiune-checkbox">
+                        <input type="checkbox" class="filtru-combustibil" value="Benzină" onchange="afiseazaCatalog()">
+                        Benzină
+                    </label>
+                    <label class="optiune-checkbox">
+                        <input type="checkbox" class="filtru-combustibil" value="Diesel" onchange="afiseazaCatalog()">
+                        Diesel
+                    </label>
+                    <label class="optiune-checkbox">
+                        <input type="checkbox" class="filtru-combustibil" value="GPL" onchange="afiseazaCatalog()">
+                        GPL
+                    </label>
+                </div>
+
+                <div class="sectiune-filtru">
+                    <h3>An fabricație</h3>
+                    <div class="interval-inputs">
+                        <input type="number" id="an-de-la" placeholder="de la" oninput="afiseazaCatalog()">
+                        <input type="number" id="an-pana-la" placeholder="până la" oninput="afiseazaCatalog()">
+                    </div>
+                </div>
+
+                <div class="sectiune-filtru">
+                    <h3>Capacitate motor (cm³)</h3>
+                    <div class="interval-inputs">
+                        <input type="number" id="motor-de-la" placeholder="de la" oninput="afiseazaCatalog()">
+                        <input type="number" id="motor-pana-la" placeholder="până la" oninput="afiseazaCatalog()">
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="container-catalog" id="lista-anunturi-catalog"></main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://odrfbzpbezhdygngzhby.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_ImglWdG2qwA6PTJpxoYvLQ_nkaNLDIS";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let modAfisareCurent = 'toate';
+
+        function initFiltre() {
+            if (window.innerWidth > 768) {
+                document.getElementById('continut-filtre').classList.add('deschis');
+            }
+        }
+
+        function toggleFiltre() {
+            const container = document.getElementById('continut-filtre');
+            container.classList.toggle('deschis');
+        }
+
+        window.addEventListener('resize', function() {
+            const container = document.getElementById('continut-filtre');
+            if (window.innerWidth > 768) {
+                container.classList.add('deschis');
+            }
+        });
+
+        function deschideDetalii(id) {
+            window.location.href = `detalii.html?id=${id}`;
+        }
+
+        function gestioneazaAfisareModele() {
+            const marciBifate = Array.from(document.querySelectorAll('.filtru-marca:checked')).map(el => el.value);
+            ['Dacia', 'Renault', 'Nissan'].forEach(marca => {
+                const containerModele = document.getElementById(`sub-modele-${marca}`);
+                if (marciBifate.includes(marca)) {
+                    containerModele.classList.add('vizibil');
+                } else {
+                    containerModele.classList.remove('vizibil');
+                    containerModele.querySelectorAll('.filtru-model').forEach(input => input.checked = false);
+                }
+            });
+        }
+
+        async function afiseazaCatalog() {
+            const container = document.getElementById('lista-anunturi-catalog');
+            container.innerHTML = `<div class="mesaj-gol">Se încarcă catalogul auto...</div>`;
+
+            const { data: masiniDinamic, error } = await supabaseClient
+                .from('masini')
+                .select('*')
+                .order('ordine', { ascending: true });
+
+            if (error) {
+                console.error("Eroare la preluarea datelor:", error);
+                container.innerHTML = `<div class="mesaj-gol" style="color: red;">Eroare la conectarea cu baza de date online.</div>`;
+                return;
+            }
+
+            let ANUNTURI = masiniDinamic || [];
+            let favorite = JSON.parse(localStorage.getItem('auto_favorite')) || [];
+
+            const marciSelectate = Array.from(document.querySelectorAll('.filtru-marca:checked')).map(el => el.value);
+            const modeleSelectate = Array.from(document.querySelectorAll('.filtru-model:checked')).map(el => el.value);
+            const combustibilSelectat = Array.from(document.querySelectorAll('.filtru-combustibil:checked')).map(el => el.value);
+
+            const anDeLa = parseInt(document.getElementById('an-de-la').value);
+            const anPanaLa = parseInt(document.getElementById('an-pana-la').value);
+            const motorDeLa = parseInt(document.getElementById('motor-de-la').value);
+            const motorPanaLa = parseInt(document.getElementById('motor-pana-la').value);
+
+            if (modAfisareCurent === 'favorite') {
+                ANUNTURI = ANUNTURI.filter(auto => favorite.includes(auto.id));
+            }
+
+            ANUNTURI = ANUNTURI.filter(auto => {
+                if (marciSelectate.length > 0 && !marciSelectate.includes(auto.marca)) return false;
+                if (modeleSelectate.length > 0 && !modeleSelectate.includes(auto.model)) return false;
+                if (combustibilSelectat.length > 0 && !combustibilSelectat.includes(auto.combustibil)) return false;
+                if (!isNaN(anDeLa) && auto.an < anDeLa) return false;
+                if (!isNaN(anPanaLa) && auto.an > anPanaLa) return false;
+                const capacitateNumerica = auto.capacitate ? parseInt(auto.capacitate.toString().replace(/\D/g, '')) : 0;
+                if (!isNaN(motorDeLa) && capacitateNumerica < motorDeLa) return false;
+                if (!isNaN(motorPanaLa) && capacitateNumerica > motorPanaLa) return false;
+                return true;
+            });
+
+            container.innerHTML = '';
+
+            if (ANUNTURI.length === 0) {
+                container.innerHTML = `<div class="mesaj-gol">Nu s-a găsit niciun vehicul conform opțiunilor selectate.</div>`;
+                return;
+            }
+
+            ANUNTURI.forEach(auto => {
+                const doarCifreMotor = auto.capacitate ? auto.capacitate.toString().replace(/\D/g, '') : '';
+                const motorInfoFinal = doarCifreMotor ? `${doarCifreMotor} cm³` : "-";
+
+                let structuraBadgeVideo = '';
+                if (auto.link_video) {
+                    structuraBadgeVideo = `<div class="badge-video-mini">🎥 Video</div>`;
+                }
+
+                let structuraPreturi = `<div class="pret-catalog">${auto.pret.toLocaleString()} EUR</div>`;
+                if (auto.pret_vechi) {
+                    structuraPreturi = `
+                        <div class="grup-preturi-catalog">
+                            <div class="pret-vechi-taiat">${auto.pret_vechi.toLocaleString()} EUR</div>
+                            <div class="pret-catalog">${auto.pret.toLocaleString()} EUR</div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML += `
+                    <div class="card-auto" onclick="deschideDetalii(${auto.id})">
+                        <div class="zona-foto-catalog">
+                            ${structuraBadgeVideo}
+                            <img src="${auto.imagine}" alt="${auto.titlu}" loading="lazy">
+                        </div>
+                        <div class="zona-detalii-catalog">
+                            <div>
+                                <h2 class="titlu-anunt">${auto.titlu}</h2>
+                                <div class="etichete-specifice">
+                                    <div class="eticheta-mini">📅 ${auto.an}</div>
+                                    <div class="eticheta-mini">🚗 ${auto.kilometri.toLocaleString()} km</div>
+                                    <div class="eticheta-mini">⛽ ${auto.combustibil}</div>
+                                    <div class="eticheta-mini">🔧 ${motorInfoFinal}</div>
+                                </div>
+                            </div>
+                            <div class="sub-detalii-pret-locatie">
+                                <div class="locatie-anunt">📍 ${auto.locatie}</div>
+                                ${structuraPreturi}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function schimbaVizualizare(tip) {
+            modAfisareCurent = tip;
+            document.getElementById('btn-toate').classList.remove('activ');
+            document.getElementById('btn-favorite').classList.remove('activ');
+            if (tip === 'toate') {
+                document.getElementById('btn-toate').classList.add('activ');
+            } else {
+                document.getElementById('btn-favorite').classList.add('activ');
+            }
+            afiseazaCatalog();
+        }
+
+        initFiltre();
+        afiseazaCatalog();
+    </script>
+</body>
+</html>

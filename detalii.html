@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalii Anunț - BeberamConcept</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f2f4f5;
+            margin: 0;
+            padding: 16px;
+            color: #002f34;
+        }
+
+        /* BUTON INAPOI */
+        .btn-inapoi-top {
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: #002f34;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 14px;
+            display: inline-block;
+        }
+
+        /* CONTAINER PRINCIPAL */
+        .container-detalii {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .coloana-stanga {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* CARUSEL */
+        .box-slider {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cadru-slider {
+            width: 100%;
+            height: 460px;
+            position: relative;
+            overflow: hidden;
+            background: #e8e8e8;
+        }
+
+        /* Elementele din interiorul caruselului (Imagini sau Video iframe) */
+        .media-item {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .media-item.activa { display: block; }
+
+        .cadru-slider img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: zoom-in;
+        }
+
+        .cadru-slider iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
+        }
+
+        .sageata {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 47, 52, 0.75);
+            color: white;
+            border: none;
+            width: 42px;
+            height: 42px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .sageata-stanga { left: 12px; }
+        .sageata-dreapta { right: 12px; }
+
+        .contor-foto {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 47, 52, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        /* MINIATURI */
+        .miniaturi-container {
+            display: flex;
+            gap: 6px;
+            padding: 10px;
+            overflow-x: auto;
+            background: white;
+        }
+
+        .miniatura-wrapper {
+            position: relative;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .miniatura {
+            width: 64px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            opacity: 0.6;
+            transition: all 0.2s;
+            display: block;
+        }
+
+        .miniatura-wrapper.activa .miniatura {
+            border-color: #002f34;
+            opacity: 1;
+        }
+
+        /* Insignă specială de PLAY pentru miniatura video */
+        .insigna-video {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        /* SPECIFICATII */
+        .container-specificatii-casete {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .container-specificatii-casete h3 {
+            margin: 0 0 14px 0;
+            font-size: 16px;
+            border-bottom: 1px solid #f2f4f5;
+            padding-bottom: 8px;
+        }
+
+        .grila-casete {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .caseta-tehnica {
+            background: #f6f7f8;
+            border: 1px solid #e6e6e6;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .caseta-tehnica span {
+            display: block;
+            font-size: 11px;
+            color: #7f9799;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.3px;
+        }
+
+        .caseta-tehnica strong {
+            display: block;
+            font-size: 15px;
+            color: #002f34;
+            margin-top: 4px;
+        }
+
+        /* DESCRIERE */
+        .box-descriere {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .box-descriere h3 {
+            margin: 0 0 12px 0;
+            font-size: 17px;
+            border-bottom: 2px solid #002f34;
+            padding-bottom: 8px;
+        }
+
+        .text-descriere {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #4e5e65;
+            white-space: pre-line;
+        }
+
+        /* COLOANA DREAPTA */
+        .coloana-dreapta {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .box-vanzator-nou {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            position: sticky;
+            top: 16px;
+        }
+
+        .titlu-anunt-dreapta {
+            font-size: 20px;
+            font-weight: bold;
+            color: #002f34;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
+
+        .specificatii-scurte-dreapta {
+            font-size: 13px;
+            color: #002f34;
+            font-weight: 600;
+            margin-bottom: 10px;
+            background: #f2f4f5;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .pret-principal {
+            font-size: 30px;
+            font-weight: 800;
+            color: #002f34;
+            margin-bottom: 14px;
+        }
+
+        .btn-actiune-principala {
+            background: #002f34;
+            color: white;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .grup-butoane-secundare {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn-secundar-alb {
+            flex: 1;
+            background: transparent;
+            border: 2px solid #002f34;
+            color: #002f34;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .locatie-info {
+            font-size: 14px;
+            color: #7f9799;
+            margin-top: 12px;
+        }
+
+        .btn-inapoi-catalog {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #7f9799;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        /* OVERLAY MODAL FULLSCREEN */
+        .overlay-fullscreen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .imagine-zoomata {
+            max-width: 95%;
+            max-height: 90%;
+            object-fit: contain;
+            cursor: zoom-in;
+            transition: transform 0.2s ease-out;
+            user-select: none;
+            position: relative;
+        }
+
+        .imagine-zoomata.in-zoom { cursor: grab; }
+        .imagine-zoomata.in-zoom:active { cursor: grabbing; }
+
+        .buton-inchide-zoom {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: white;
+            color: #002f34;
+            border: none;
+            width: 45px; height: 45px;
+            font-size: 24px; font-weight: bold;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10002;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container-detalii { grid-template-columns: 1fr; gap: 12px; }
+            .coloana-dreapta { order: -1; }
+            .box-vanzator-nou { position: static; padding: 16px; }
+            .titlu-anunt-dreapta { font-size: 17px; }
+            .pret-principal { font-size: 26px; }
+            .cadru-slider { height: 240px; }
+            .sageata { width: 36px; height: 36px; font-size: 16px; }
+            .grila-casete { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .miniatura { width: 52px; height: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="btn-inapoi-top" onclick="window.location.href='index.html'">← Înapoi la catalog</button>
+
+    <div class="container-detalii">
+
+        <main class="coloana-stanga">
+            <div class="box-slider">
+                <div class="cadru-slider" id="zona-carusel"></div>
+                
+                <button class="sageata sageata-stanga" onclick="schimbaFila(-1)">❮</button>
+                <button class="sageata sageata-dreapta" onclick="schimbaFila(1)">❯</button>
+                <div class="contor-foto" id="text-contor">1 / 1</div>
+                
+                <div class="miniaturi-container" id="miniaturi"></div>
+            </div>
+
+            <div class="container-specificatii-casete">
+                <h3>Specificații Vehicul</h3>
+                <div class="grila-casete">
+                    <div class="caseta-tehnica"><span>Rulaj</span><strong id="c-rulaj">-</strong></div>
+                    <div class="caseta-tehnica"><span>An Fabricație</span><strong id="c-an">-</strong></div>
+                    <div class="caseta-tehnica"><span>Marcă</span><strong id="c-marca">-</strong></div>
+                    <div class="caseta-tehnica"><span>Putere</span><strong id="c-putere">-</strong></div>
+                    <div class="caseta-tehnica"><span>Capacitate Motor</span><strong id="c-motor">-</strong></div>
+                    <div class="caseta-tehnica"><span>Cutie Viteze</span><strong id="c-cutie">-</strong></div>
+                    <div class="caseta-tehnica"><span>Normă Poluare</span><strong id="c-poluare">-</strong></div>
+                </div>
+            </div>
+
+            <div class="box-descriere">
+                <h3>Descrierea vehiculului</h3>
+                <div class="text-descriere" id="detaliu-descriere">-</div>
+            </div>
+        </main>
+
+        <aside class="coloana-dreapta">
+            <div class="box-vanzator-nou">
+                <h1 class="titlu-anunt-dreapta" id="detaliu-titlu">Se încarcă...</h1>
+                <div class="specificatii-scurte-dreapta" id="detaliu-scurt">-</div>
+                <div class="subtitlu-anunt-dreapta" id="detaliu-subtitlu">Se preiau datele...</div>
+                <div class="pret-principal" id="detaliu-pret">0 EUR</div>
+
+                <button class="btn-actiune-principala" id="btn-telefon" onclick="arataNumarTelefon()">
+                    📞 Arată numărul de telefon
+                </button>
+
+                <div class="grup-butoane-secundare">
+                    <button class="btn-secundar-alb" id="btn-favorit" onclick="salveazaLaFavorite()">❤️ Salvează</button>
+                    <button class="btn-secundar-alb" onclick="navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copiat!'))">🔗 Trimite</button>
+                </div>
+
+                <div class="locatie-info">
+                    📍 Localitate: <strong id="detaliu-locatie" style="color:#002f34">-</strong>
+                </div>
+
+                <button class="btn-inapoi-catalog" onclick="window.location.href='index.html'">← Înapoi la catalog</button>
+            </div>
+        </aside>
+
+    </div>
+
+    <div class="overlay-fullscreen" id="f-overlay" onclick="inchideFullscreen()">
+        <button class="buton-inchide-zoom" onclick="inchideFullscreen()">✕</button>
+        <img class="imagine-zoomata" id="f-imagine" src="" alt="Zoom" draggable="false" onclick="gestiuneClickZoom(event)">
+    </div>
+
+   <script>
+        const SUPABASE_URL = "https://odrfbzpbezhdygngzhby.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_ImglWdG2qwA6PTJpxoYvLQ_nkaNLDIS";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        const autoId = parseInt(params.get('id'));
+
+        let masina = null;
+        let indexCurent = 0; 
+        let totalFile = 0;   
+        let areVideo = false;
+        let numarTelefonSalvat = "";
+        let colectiePoze = [];
+
+        let esteInZoom = false;
+        let esteApasat = false;
+        let aFostMiscat = false;
+        let startX, startY, clickStartX, clickStartY;
+        let translateX = 0, translateY = 0;
+
+        // FUNCȚIE CORECTATĂ: Extrage ID-ul de YouTube și creează link-ul oficial de Player Interactiv
+        function extrageLinkEmbedVideo(urlMurdar) {
+            if (!urlMurdar) return "";
+            let url = urlMurdar.trim();
+
+            // Curățare link-uri YouTube (standard, mobile, shorts sau share)
+            if (url.includes("youtube.com") || url.includes("youtu.be")) {
+                let idYoutube = "";
+                
+                if (url.includes("v=")) {
+                    // Exemplu: youtube.com/watch?v=AbCdEfGhIjK
+                    idYoutube = url.split("v=")[1].split("&")[0];
+                } else if (url.includes("shorts/")) {
+                    // Exemplu: youtube.com/shorts/AbCdEfGhIjK
+                    idYoutube = url.split("shorts/")[1].split("?")[0];
+                } else if (url.includes("youtu.be/")) {
+                    // Exemplu: youtu.be/AbCdEfGhIjK
+                    idYoutube = url.split("youtu.be/")[1].split("?")[0];
+                } else if (url.includes("embed/")) {
+                    // Exemplu: youtube.com/embed/AbCdEfGhIjK
+                    idYoutube = url.split("embed/")[1].split("?")[0];
+                }
+                
+                if (idYoutube) {
+                    // Adăugăm parametrii relevanți pentru controale native active
+                    return `https://www.youtube.com/embed/${idYoutube}?rel=0&showinfo=1&controls=1&autoplay=0`;
+                }
+            }
+
+            // Suport de rezervă pentru Google Drive în caz că mai ai și astfel de linkuri
+            if (url.includes("drive.google.com")) {
+                let idDrive = "";
+                if (url.includes("/file/d/")) {
+                    idDrive = url.split("/file/d/")[1].split("/")[0];
+                } else if (url.includes("id=")) {
+                    idDrive = url.split("id=")[1].split("&")[0];
+                }
+                if (idDrive) {
+                    return `https://drive.google.com/file/d/${idDrive}/preview`;
+                }
+            }
+            
+            return "";
+        }
+
+        async function incarcaDetaliiMasina() {
+            if (isNaN(autoId)) {
+                document.getElementById('detaliu-titlu').innerText = "Anunț invalid.";
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('masini').select('*').eq('id', autoId).single();
+
+            if (error || !data) {
+                document.getElementById('detaliu-titlu').innerText = "Anunțul nu a fost găsit.";
+                return;
+            }
+
+            masina = data;
+
+            // Incrementare vizualizări
+            let vazute = JSON.parse(localStorage.getItem('anunturi_vazute_de_mine')) || [];
+            if (!vazute.includes(autoId)) {
+                await supabaseClient.from('masini').update({ vizualizari: (masina.vizualizari || 0) + 1 }).eq('id', autoId);
+                vazute.push(autoId);
+                localStorage.setItem('anunturi_vazute_de_mine', JSON.stringify(vazute));
+            }
+
+            // Date tehnice
+            const putere = masina.putere ? masina.putere.toString().replace(/\D/g, '') : '';
+            const capacitate = masina.capacitate ? masina.capacitate.toString().replace(/\D/g, '') : '';
+            const textPutere = putere ? `${putere} CP` : '-';
+            const textCapacitate = capacitate ? `${capacitate} cm³` : '-';
+
+            document.getElementById('detaliu-titlu').innerText = masina.marca + " " + masina.model;
+            document.getElementById('detaliu-scurt').innerText = `${masina.an} • ${masina.kilometri.toLocaleString()} km • ${textCapacitate}`;
+            document.getElementById('detaliu-subtitlu').innerText = `${masina.titlu} • ${masina.combustibil}`;
+            document.getElementById('detaliu-pret').innerText = `${masina.pret.toLocaleString()} EUR`;
+            document.getElementById('detaliu-locatie').innerText = masina.locatie;
+            document.getElementById('detaliu-descriere').innerText = masina.descriere || "Fără descriere adițională.";
+            document.getElementById('c-rulaj').innerText = `${masina.kilometri.toLocaleString()} km`;
+            document.getElementById('c-an').innerText = masina.an;
+            document.getElementById('c-marca').innerText = masina.marca;
+            document.getElementById('c-putere').innerText = textPutere;
+            document.getElementById('c-motor').innerText = textCapacitate;
+            document.getElementById('c-cutie').innerText = masina.cutie || "-";
+            document.getElementById('c-poluare').innerText = masina.poluare || "-";
+
+            numarTelefonSalvat = masina.telefon || "Nespecificat";
+            colectiePoze = masina.imagini && masina.imagini.length > 0 ? masina.imagini : [masina.imagine];
+            
+            // Procesare automată a linkului de YouTube
+            let urlVideoProcesat = extrageLinkEmbedVideo(masina.link_video);
+            areVideo = urlVideoProcesat !== "";
+
+            totalFile = colectiePoze.length + (areVideo ? 1 : 0);
+
+            // Construim interiorul Caruselului mare
+            const carusel = document.getElementById('zona-carusel');
+            carusel.innerHTML = '';
+
+            // Adăugăm imaginile primile
+            colectiePoze.forEach((url, idx) => {
+                const div = document.createElement('div');
+                div.className = 'media-item' + (idx === 0 ? ' activa' : '');
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = `Foto ${idx + 1}`;
+                img.onclick = () => deschideFullscreen(url);
+                
+                div.appendChild(img);
+                carusel.appendChild(div);
+            });
+
+            // Adăugăm videoclipul pe ULTIMA poziție (a 9-a filă) dacă există
+            if (areVideo) {
+                const divVideo = document.createElement('div');
+                divVideo.className = 'media-item';
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = urlVideoProcesat;
+                iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+                iframe.setAttribute('allowfullscreen', 'true');
+                
+                divVideo.appendChild(iframe);
+                carusel.appendChild(divVideo);
+            }
+
+            // Construim miniaturile de jos
+            const minContainer = document.getElementById('miniaturi');
+            minContainer.innerHTML = '';
+
+            // Miniaturi poze
+            colectiePoze.forEach((url, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'miniatura-wrapper' + (idx === 0 ? ' activa' : '');
+                wrapper.onclick = () => afiseazaFila(idx);
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'miniatura';
+
+                wrapper.appendChild(img);
+                minContainer.appendChild(wrapper);
+            });
+
+            // Miniatură specială pentru video la final
+            if (areVideo) {
+                const wrapperVideo = document.createElement('div');
+                wrapperVideo.className = 'miniatura-wrapper';
+                wrapperVideo.onclick = () => afiseazaFila(colectiePoze.length);
+
+                const imgCoperta = document.createElement('img');
+                imgCoperta.src = colectiePoze[0]; 
+                imgCoperta.className = 'miniatura';
+
+                const iconita = document.createElement('div');
+                iconita.className = 'insigna-video';
+                iconita.innerHTML = '▶ Video';
+
+                wrapperVideo.appendChild(imgCoperta);
+                wrapperVideo.appendChild(iconita);
+                minContainer.appendChild(wrapperVideo);
+            }
+
+            actualizeazaContor();
+            actualizeazaFavorit();
+            document.title = `${masina.titlu} - BeberamConcept`;
+        }
+
+        function afiseazaFila(idx) {
+            const file = document.querySelectorAll('#zona-carusel .media-item');
+            const miniaturiWrappers = document.querySelectorAll('.miniatura-wrapper');
+
+            if (file[indexCurent]) file[indexCurent].classList.remove('activa');
+            if (miniaturiWrappers[indexCurent]) miniaturiWrappers[indexCurent].classList.remove('activa');
+
+            indexCurent = idx;
+
+            if (file[indexCurent]) file[indexCurent].classList.add('activa');
+            if (miniaturiWrappers[indexCurent]) miniaturiWrappers[indexCurent].classList.add('activa');
+
+            actualizeazaContor();
+        }
+
+        function schimbaFila(dir) {
+            let nou = indexCurent + dir;
+            if (nou >= totalFile) nou = 0;
+            if (nou < 0) nou = totalFile - 1;
+            afiseazaFila(nou);
+        }
+
+        function actualizeazaContor() {
+            let tipFila = (areVideo && indexCurent === totalFile - 1) ? "Prezentare Video" : `Foto ${indexCurent + 1} / ${colectiePoze.length}`;
+            document.getElementById('text-contor').innerText = tipFila;
+        }
+
+        /* LOGICA DE FULLSCREEN, ZOOM PENTRU IMAGINI */
+        function deschideFullscreen(url) {
+            const overlay = document.getElementById('f-overlay');
+            const imagineZoom = document.getElementById('f-imagine');
+            imagineZoom.src = url;
+            overlay.style.display = 'flex';
+            reseteazaPozitieZoom();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function inchideFullscreen() {
+            document.getElementById('f-overlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function reseteazaPozitieZoom() {
+            esteInZoom = false;
+            esteApasat = false;
+            aFostMiscat = false;
+            translateX = 0;
+            translateY = 0;
+            const img = document.getElementById('f-imagine');
+            img.classList.remove('in-zoom');
+            img.style.transform = `translate(0px, 0px) scale(1)`;
+        }
+
+        function gestiuneClickZoom(event) {
+            event.stopPropagation(); 
+            if (aFostMiscat) {
+                aFostMiscat = false;
+                return; 
+            }
+            const img = document.getElementById('f-imagine');
+            if (!esteInZoom) {
+                esteInZoom = true;
+                img.classList.add('in-zoom');
+                img.style.transform = `translate(0px, 0px) scale(2.5)`;
+            } else {
+                reseteazaPozitieZoom();
+            }
+        }
+
+        const imgZoom = document.getElementById('f-imagine');
+
+        imgZoom.addEventListener('mousedown', (e) => {
+            if (!esteInZoom) return;
+            e.preventDefault(); 
+            esteApasat = true;
+            aFostMiscat = false;
+            clickStartX = e.clientX;
+            clickStartY = e.clientY;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            imgZoom.style.transition = 'none'; 
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!esteApasat || !esteInZoom) return;
+            e.preventDefault();
+            let distantaX = Math.abs(e.clientX - clickStartX);
+            let distantaY = Math.abs(e.clientY - clickStartY);
+            if (distantaX > 5 || distantaY > 5) {
+                aFostMiscat = true;
+            }
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            imgZoom.style.transform = `translate(${translateX}px, ${translateY}px) scale(2.5)`;
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!esteApasat) return;
+            esteApasat = false;
+            imgZoom.style.transition = 'transform 0.2s ease-out'; 
+        });
+
+        imgZoom.addEventListener('touchstart', (e) => {
+            if (!esteInZoom) return;
+            esteApasat = true;
+            aFostMiscat = false;
+            clickStartX = e.touches[0].clientX;
+            clickStartY = e.touches[0].clientY;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+            imgZoom.style.transition = 'none';
+        });
+
+        imgZoom.addEventListener('touchmove', (e) => {
+            if (!esteApasat || !esteInZoom) return;
+            let distantaX = Math.abs(e.touches[0].clientX - clickStartX);
+            let distantaY = Math.abs(e.touches[0].clientY - clickStartY);
+            if (distantaX > 5 || distantaY > 5) {
+                aFostMiscat = true;
+            }
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            imgZoom.style.transform = `translate(${translateX}px, ${translateY}px) scale(2.5)`;
+        });
+
+        imgZoom.addEventListener('touchend', () => {
+            esteApasat = false;
+            imgZoom.style.transition = 'transform 0.2s ease-out';
+        });
+
+        async function arataNumarTelefon() {
+            if (masina) {
+                let telefoane = JSON.parse(localStorage.getItem('telefoane_apasate_de_mine')) || [];
+                if (!telefoane.includes(autoId)) {
+                    await supabaseClient.from('masini').update({ clickuriTelefon: (masina.clickuriTelefon || 0) + 1 }).eq('id', autoId);
+                    telefoane.push(autoId);
+                    localStorage.setItem('telefoane_apasate_de_mine', JSON.stringify(telefoane));
+                }
+            }
+            const btn = document.getElementById('btn-telefon');
+            btn.innerHTML = `📞 ${numarTelefonSalvat}`;
+            btn.onclick = () => window.location.href = `tel:${numarTelefonSalvat}`;
+        }
+
+        function salveazaLaFavorite() {
+            let fav = JSON.parse(localStorage.getItem('auto_favorite')) || [];
+            if (fav.includes(autoId)) {
+                fav = fav.filter(id => id !== autoId);
+                alert("Eliminat de la favorite.");
+            } else {
+                fav.push(autoId);
+                alert("Anunț salvat la favorite!");
+            }
+            localStorage.setItem('auto_favorite', JSON.stringify(fav));
+            actualizeazaFavorit();
+        }
+
+        function actualizeazaFavorit() {
+            const fav = JSON.parse(localStorage.getItem('auto_favorite')) || [];
+            const btn = document.getElementById('btn-favorit');
+            btn.innerHTML = fav.includes(autoId) ? "❤️ Salvat" : "❤️ Salvează";
+            btn.style.background = fav.includes(autoId) ? "#f2f4f5" : "transparent";
+        }
+
+        incarcaDetaliiMasina();
+    </script>
+</body>
+</html>

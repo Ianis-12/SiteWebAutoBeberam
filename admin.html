@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panou Administrare - Galerie & Descriere</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f2f4f5; margin: 0; padding: 40px; color: #002f34; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .ecran-blocat { background: white; padding: 30px; border-radius: 8px; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+        .ecran-blocat input { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; text-align: center; }
+        .ecran-blocat button { background: #002f34; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        .zona-lucru-admin { background: white; padding: 30px; border-radius: 6px; border: 1px solid #e0e0e0; max-width: 850px; width: 100%; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: none; }
+        h2 { border-bottom: 2px solid #002f34; padding-bottom: 10px; margin-top: 0; color: #002f34; }
+        .form-grup { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .form-grup input, .form-grup select, .form-grup textarea { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; font-family: inherit; }
+        .zona-incarcare-foto { border: 2px dashed #002f34; background: #f8f9fa; padding: 25px; text-align: center; border-radius: 6px; cursor: pointer; margin-bottom: 15px; }
+        .zona-incarcare-foto.hover { background: #e8f0fe; border-color: #002f34; }
+        .previzualizare-galerie { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        
+        .container-foto-prev { position: relative; width: 80px; height: 80px; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; cursor: grab; user-select: none; }
+        .container-foto-prev:active { cursor: grabbing; }
+        .container-foto-prev img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .sortable-ghost { opacity: 0.4; border: 2px dashed #002f34 !important; }
+        
+        .sterge-foto-prev { position: absolute; top: 2px; right: 2px; background: rgba(254, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        
+        .btn-salveaza { background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; width: 100%; transition: background 0.2s; }
+        .btn-salveaza.mod-editare { background: #007bff; }
+        .btn-anuleaza { width: 100%; background: #6c757d; color: white; border: none; padding: 10px; margin-top: 8px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none; }
+        .alerta-editare { background: #fff3cd; color: #856404; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; font-weight: bold; display: none; border: 1px solid #ffeeba; }
+
+        .lista-administrare { margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 20px; }
+        
+        /* CARD MANAGEMENT AUTO ACTUALIZAT */
+        .card-management-auto { display: flex; align-items: center; background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px 15px; margin-bottom: 12px; gap: 15px; user-select: none; position: relative; }
+        .sortable-drag-masina { opacity: 0.5; background-color: #f7f9fa; border: 1px dashed #002f34; }
+
+        /* ZONA CU BULINE (MANERUL) */
+        .maner-reordonare { display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 18px; cursor: move; width: 25px; height: 40px; transition: color 0.2s; }
+        .maner-reordonare:hover { color: #002f34; }
+        .maner-reordonare:active { cursor: grabbing; }
+
+        .foto-management { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
+        .detalii-management { flex-grow: 1; display: flex; flex-direction: column; gap: 6px; }
+        .grup-butoane-actiuni { display: flex; gap: 6px; }
+
+        .titlu-management-auto { font-size: 15px; font-weight: 600; color: #002f34; }
+        .pret-management { color: #002f34; font-weight: 800; margin-left: 8px; }
+        .pret-vechi-management { text-decoration: line-through; color: #dc3545; font-size: 13px; margin-left: 6px; font-weight: normal; }
+        
+        .statistici-management-linie { display: flex; gap: 20px; margin-top: 2px; }
+        .stat-item { font-size: 14px; color: #5b767d; display: flex; align-items: center; gap: 5px; }
+        .stat-item strong { color: #002f34; font-size: 15px; }
+        
+        .btn-actiune { border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: opacity 0.2s; }
+        .btn-actiune:hover { opacity: 0.9; }
+        .btn-edit { background: #ffc107; color: #000; }
+        .btn-sterge { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="ecran-blocat" id="bariera-securitate">
+        <h2>🔒 Panou Securizat Admin</h2>
+        <p>Introdu codul de securitate pentru a gestiona baza de date auto.</p>
+        <input type="password" id="cod-acces" placeholder="••••••••" onkeydown="if(event.key==='Enter') verificaCodul()">
+        <button onclick="verificaCodul()">Deblochează Panoul</button>
+    </div>
+
+    <div class="zona-lucru-admin" id="panou-principal">
+        <h2 id="titlu-formular">🚀 Adaugă un Anunț Nou</h2>
+        
+        <div class="alerta-editare" id="alerta-mod-editare">
+            ⚠️ Mod Editare Activ! Schimbi datele unui anunț existent. Pentru a renunța și a adăuga o mașină nouă, apasă pe „Anulează Editarea”.
+        </div>
+
+        <form id="formular-anunt" onsubmit="proceseazaFormular(event)">
+            <div class="form-grup">
+                <select id="marca-admin" onchange="schimbaModeleAdmin()">
+                    <option value="Dacia">Dacia</option>
+                    <option value="Renault">Renault</option>
+                    <option value="Nissan">Nissan</option>
+                </select>
+                <select id="model-admin"></select>
+                <input type="text" id="titlu-detaliat" placeholder="Detalii (ex: 1.5 dCi Laureate)" required>
+            </div>
+            
+            <div class="form-grup">
+                <input type="number" id="an" placeholder="An fabricație" required>
+                <input type="number" id="kilometri" placeholder="Kilometri (Rulaj)" required>
+                <select id="combustibil">
+                    <option value="Benzină">Benzină</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="GPL">GPL</option>
+                </select>
+                <input type="number" id="pret" placeholder="Preț Nou Actual (EUR)" required>
+                <input type="number" id="pret-vechi" placeholder="Preț Vechi Tăiat (EUR) - Opțional">
+                
+                <input type="text" id="locatie" value="Pitești" placeholder="Oraș" required>
+            </div>
+
+            <div class="form-grup">
+                <input type="text" id="putere" placeholder="Putere (ex: 110 CP)" required>
+                <input type="text" id="capacitate" placeholder="Capacitate motor (ex: 1461 cm3)" required>
+                <select id="cutie">
+                    <option value="Manuală">Manuală</option>
+                    <option value="Automată">Automată</option>
+                </select>
+                <select id="poluare">
+                    <option value="Euro 6">Euro 6</option>
+                    <option value="Euro 5">Euro 5</option>
+                    <option value="Euro 4">Euro 4</option>
+                    <option value="Euro 3">Euro 3</option>
+                </select>
+            </div>
+
+            <div class="form-grup">
+                <input type="tel" id="telefon-admin" value="0770477877" placeholder="Număr de telefon contact" required>
+                <input type="text" id="link-video" placeholder="Link Video Scurt (YouTube, Google Drive etc.) - Opțional">
+            </div>
+
+            <div class="form-grup" style="grid-template-columns: 1fr;">
+                <textarea id="descriere-admin" rows="6" placeholder="Scrie aici descrierea completă a mașinii..." required></textarea>
+            </div>
+
+            <div class="zona-incarcare-foto" id="zona-drop" onclick="document.getElementById('input-fisiere').click()">
+                <p>📸 Trage pozele aici (Drag & Drop) sau dă click pentru a le selecta</p>
+                <input type="file" id="input-fisiere" multiple accept="image/*" style="display: none;" onchange="proceseazaFisiere(this.files)">
+            </div>
+
+            <div class="previzualizare-galerie" id="previzualizare-form"></div>
+            
+            <button type="submit" class="btn-salveaza" id="btn-salvare-anunt">Publică Anunțul pe Site</button>
+            <button type="button" class="btn-anuleaza" id="btn-anulare-editare" onclick="reseteazaFormularComplet()">Anulează Editarea</button>
+        </form>
+
+        <div class="lista-administrare">
+            <h2>🗑️ Management Anunțuri Active</h2>
+            <div id="lista-anunturi-stergere"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://odrfbzpbezhdygngzhby.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_ImglWdG2qwA6PTJpxoYvLQ_nkaNLDIS";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const MODELE_MARCI = {
+            Dacia: ["Sandero", "Dokker", "Duster", "Lodgy", "MCV", "Sandero Stepway"],
+            Renault: ["Clio", "Captur", "Kadjar"],
+            Nissan: ["Qashqai", "Qashqai+2"]
+        };
+
+        let ANUNTURI_DINAMICE = []; 
+        let listaImaginiIncarcate = [];
+        let idMasinaEditata = null; 
+
+        function verificaCodul() {
+            const input = document.getElementById('cod-acces').value;
+            if (input === "rramonaa76") {
+                document.getElementById('bariera-securitate').style.display = 'none';
+                document.getElementById('panou-principal').style.display = 'block';
+                schimbaModeleAdmin();
+                afiseazaAnunturiStergere();
+                activeazaDragAndDrop();
+            } else { alert("Cod incorect!"); }
+        }
+
+        function schimbaModeleAdmin() {
+            const marcaSelectata = document.getElementById('marca-admin').value;
+            const modelSelect = document.getElementById('model-admin');
+            modelSelect.innerHTML = '';
+            MODELE_MARCI[marcaSelectata].forEach(mod => { modelSelect.innerHTML += `<option value="${mod}">${mod}</option>`; });
+        }
+
+        function activeazaDragAndDrop() {
+            const zonaDrop = document.getElementById('zona-drop');
+            ['dragenter', 'dragover'].forEach(ev => zonaDrop.addEventListener(ev, (e) => { e.preventDefault(); zonaDrop.classList.add('hover'); }, false));
+            ['dragleave', 'drop'].forEach(ev => zonaDrop.addEventListener(ev, (e) => { e.preventDefault(); zonaDrop.classList.remove('hover'); }, false));
+            zonaDrop.addEventListener('drop', (e) => { proceseazaFisiere(e.dataTransfer.files); }, false);
+        }
+
+        function proceseazaFisiere(fisiere) {
+            Array.from(fisiere).forEach(fisier => {
+                if (!fisier.type.startsWith('image/')) return;
+                
+                const cititor = new FileReader();
+                cititor.readAsDataURL(fisier);
+                cititor.onloadend = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const MAX_WIDTH = 1200;
+                        const MAX_HEIGHT = 1200;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const pozaMicsorataBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                        
+                        listaImaginiIncarcate.push(pozaMicsorataBase64);
+                        afiseazaPrevizualizareFormular();
+                    };
+                };
+            });
+        }
+
+        function afiseazaPrevizualizareFormular() {
+            const container = document.getElementById('previzualizare-form');
+            container.innerHTML = '';
+            
+            listaImaginiIncarcate.forEach((imgUrl, idx) => {
+                container.innerHTML += `
+                    <div class="container-foto-prev" data-index="${idx}">
+                        <img src="${imgUrl}">
+                        <button type="button" class="sterge-foto-prev" onclick="eliminaFotoDinFormular(${idx})">X</button>
+                    </div>`;
+            });
+
+            if (container.sortableInstance) {
+                container.sortableInstance.destroy();
+            }
+
+            container.sortableInstance = new Sortable(container, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function () {
+                    const elementeCurente = Array.from(container.children);
+                    const nouaListaImagini = elementeCurente.map(el => {
+                        const indexVechi = parseInt(el.getAttribute('data-index'));
+                        return listaImaginiIncarcate[indexVechi];
+                    });
+                    
+                    listaImaginiIncarcate = nouaListaImagini;
+                    
+                    elementeCurente.forEach((el, idx) => {
+                        el.setAttribute('data-index', idx);
+                        const btnX = el.querySelector('.sterge-foto-prev');
+                        if (btnX) {
+                            btnX.setAttribute('onclick', `eliminaFotoDinFormular(${idx})`);
+                        }
+                    });
+                }
+            });
+        }
+
+        function eliminaFotoDinFormular(idx) {
+            listaImaginiIncarcate.splice(idx, 1);
+            afiseazaPrevizualizareFormular();
+        }
+
+        function incarcaAnuntPentruEditare(id) {
+            const masina = ANUNTURI_DINAMICE.find(auto => auto.id === id);
+            if (!masina) return;
+
+            idMasinaEditata = id;
+
+            document.getElementById('marca-admin').value = masina.marca;
+            schimbaModeleAdmin();
+            document.getElementById('model-admin').value = masina.model;
+            
+            let restTitlu = masina.titlu.replace(masina.marca + " " + masina.model, "").trim();
+            document.getElementById('titlu-detaliat').value = restTitlu;
+
+            document.getElementById('an').value = masina.an;
+            document.getElementById('kilometri').value = masina.kilometri;
+            document.getElementById('combustibil').value = masina.combustibil;
+            document.getElementById('pret').value = masina.pret;
+            document.getElementById('pret-vechi').value = masina.pret_vechi || '';
+            document.getElementById('locatie').value = masina.locatie;
+            document.getElementById('putere').value = masina.putere || '';
+            document.getElementById('capacitate').value = masina.capacitate || '';
+            document.getElementById('cutie').value = masina.cutie || 'Manuală';
+            document.getElementById('poluare').value = masina.poluare || 'Euro 6';
+            document.getElementById('telefon-admin').value = masina.telefon || '';
+            document.getElementById('link-video').value = masina.link_video || '';
+            document.getElementById('descriere-admin').value = masina.descriere;
+
+            listaImaginiIncarcate = masina.imagini && masina.imagini.length > 0 ? [...masina.imagini] : [masina.imagine];
+            afiseazaPrevizualizareFormular();
+
+            document.title = `✏️ Editează Anunț: ${masina.marca} ${masina.model}`;
+            document.getElementById('titlu-formular').innerText = `✏️ Editează Anunț: ${masina.marca} ${masina.model}`;
+            
+            const btnSalvare = document.getElementById('btn-salvare-anunt');
+            btnSalvare.innerText = "Actualizează Anunțul Modificat";
+            btnSalvare.classList.add('mod-editare');
+
+            document.getElementById('alerta-mod-editare').style.display = 'block';
+            document.getElementById('btn-anulare-editare').style.display = 'block';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function proceseazaFormular(event) {
+            event.preventDefault();
+            if(listaImaginiIncarcate.length === 0) { alert("Adaugă cel puțin o poză!"); return; }
+
+            const marca = document.getElementById('marca-admin').value;
+            const model = document.getElementById('model-admin').value;
+            const titluComplet = marca + " " + model + " " + document.getElementById('titlu-detaliat').value.trim();
+            
+            const pVechi = document.getElementById('pret-vechi').value;
+            const linkVideoValoare = document.getElementById('link-video').value.trim();
+
+            const dateMasina = {
+                marca: marca,
+                model: model,
+                titlu: titluComplet,
+                an: parseInt(document.getElementById('an').value),
+                kilometri: parseInt(document.getElementById('kilometri').value),
+                combustibil: document.getElementById('combustibil').value,
+                pret: parseInt(document.getElementById('pret').value),
+                pret_vechi: pVechi ? parseInt(pVechi) : null,
+                moneda: "EUR",
+                locatie: document.getElementById('locatie').value,
+                descriere: document.getElementById('descriere-admin').value,
+                putere: document.getElementById('putere').value,
+                capacitate: document.getElementById('capacitate').value,
+                cutie: document.getElementById('cutie').value,
+                poluare: document.getElementById('poluare').value,
+                telefon: document.getElementById('telefon-admin').value,
+                link_video: linkVideoValoare !== "" ? linkVideoValoare : null,
+                imagine: listaImaginiIncarcate[0],
+                imagini: listaImaginiIncarcate
+            };
+
+            if (idMasinaEditata !== null) {
+                const { error } = await supabaseClient
+                    .from('masini')
+                    .update(dateMasina)
+                    .eq('id', idMasinaEditata);
+
+                if (error) {
+                    alert("Eroare la actualizarea pe server: " + error.message);
+                    return;
+                }
+                alert("Anunțul a fost actualizat cu succes pe server!");
+            } else {
+                const { error } = await supabaseClient
+                    .from('masini')
+                    .insert([{
+                        ...dateMasina,
+                        vizualizari: 0,
+                        clickuriTelefon: 0,
+                        ordine: 9999
+                    }]);
+
+                if (error) {
+                    alert("Eroare la publicarea pe server: " + error.message);
+                    return;
+                }
+                alert("Anunțul complet a fost publicat online!");
+            }
+
+            reseteazaFormularComplet();
+            await afiseazaAnunturiStergere();
+        }
+
+        // METODA MODIFICATĂ PENTRU A PĂSTRA DATELE AUTOMATE LA RESETARE FORMULAR
+        function reseteazaFormularComplet() {
+            idMasinaEditata = null;
+            document.getElementById('formular-anunt').reset();
+            listaImaginiIncarcate = [];
+            document.getElementById('previzualizare-form').innerHTML = '';
+            
+            document.getElementById('titlu-formular').innerText = "🚀 Adaugă un Anunț Nou";
+            
+            const btnSalvare = document.getElementById('btn-salvare-anunt');
+            btnSalvare.innerText = "Publică Anunțul pe Site";
+            btnSalvare.classList.remove('mod-editare');
+
+            document.getElementById('alerta-mod-editare').style.display = 'none';
+            document.getElementById('btn-anulare-editare').style.display = 'none';
+            
+            // SE PUN VALORILE IMPLICITE ÎNAPOI AUTOMAT
+            document.getElementById('locatie').value = "Pitești";
+            document.getElementById('telefon-admin').value = "07XXXXXXXX"; // Schimbă și aici!
+            
+            schimbaModeleAdmin();
+        }
+
+        async function afiseazaAnunturiStergere() {
+            const container = document.getElementById('lista-anunturi-stergere');
+            container.innerHTML = `<div class="stat-item">Se încarcă lista de pe server...</div>`;
+
+            const { data: masiniSupabase, error } = await supabaseClient
+                .from('masini')
+                .select('*')
+                .order('ordine', { ascending: true });
+
+            if (error) {
+                container.innerHTML = `<div style="color:red;">Eroare server la încărcarea listei.</div>`;
+                console.error(error);
+                return;
+            }
+
+            ANUNTURI_DINAMICE = masiniSupabase || [];
+            container.innerHTML = '';
+
+            let favoriteGlobale = JSON.parse(localStorage.getItem('auto_favorite')) || [];
+
+            ANUNTURI_DINAMICE.forEach(auto => {
+                const vizualizari = auto.vizualizari || 0;
+                const clickuriTelefon = auto.clickuriTelefon || 0;
+                const nrSalvari = favoriteGlobale.filter(id => id === auto.id).length;
+                
+                let textPreturi = `<span class="pret-management">${auto.pret.toLocaleString()} EUR</span>`;
+                if (auto.pret_vechi) {
+                    textPreturi += `<span class="pret-vechi-management">${auto.pret_vechi.toLocaleString()} EUR</span>`;
+                }
+
+                container.innerHTML += `
+                    <div class="card-management-auto" data-id="${auto.id}">
+                        <div class="maner-reordonare"><i class="fas fa-grip-vertical"></i></div>
+                        <img class="foto-management" src="${auto.imagine}" alt="Foto">
+                        <div class="detalii-management">
+                            <span class="titlu-management-auto">${auto.titlu} ${textPreturi}</span>
+                            
+                            <div class="statistici-management-linie">
+                                <span class="stat-item">👁️ <strong>${vizualizari}</strong></span>
+                                <span class="stat-item">📞 <strong>${clickuriTelefon}</strong></span>
+                                <span class="stat-item">❤️ <strong>${nrSalvari}</strong></span>
+                                ${auto.link_video ? '<span class="stat-item" style="color:#28a745; font-weight:bold;">🎥 Video inclus</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="grup-butoane-actiuni">
+                            <button type="button" class="btn-actiune btn-edit" onclick="incarcaAnuntPentruEditare(${auto.id})">✏️ Editează</button>
+                            <button type="button" class="btn-actiune" style="background: #17a2b8; color: white;" onclick="reseteazaStatistici(${auto.id})">🔄 Reset</button>
+                            <button type="button" class="btn-actiune btn-sterge" onclick="stergeAnunt(${auto.id})">❌ Șterge</button>
+                        </div>
+                    </div>`;
+            });
+
+            if (container.sortableMasiniInstance) {
+                container.sortableMasiniInstance.destroy();
+            }
+
+            container.sortableMasiniInstance = new Sortable(container, {
+                animation: 180,
+                handle: '.maner-reordonare', 
+                scroll: true,                
+                scrollSensitivity: 60,       
+                scrollSpeed: 15,             
+                ghostClass: 'sortable-drag-masina',
+                onEnd: async function () {
+                    const carduriRamase = Array.from(container.children);
+                    
+                    for (let i = 0; i < carduriRamase.length; i++) {
+                        const masinaId = carduriRamase[i].getAttribute('data-id');
+                        const nouaOrdine = i + 1;
+
+                        if (masinaId) {
+                            await supabaseClient
+                                .from('masini')
+                                .update({ ordine: nouaOrdine })
+                                .eq('id', masinaId);
+                        }
+                    }
+                    console.log("Ordinea nouă a mașinilor a fost actualizată!");
+                }
+            });
+        }
+
+        async function reseteazaStatistici(id) {
+            if(confirm("Ești sigur că vrei să resetezi vizualizările și numerele de telefon la 0 pentru acest anunț?")) {
+                const { error } = await supabaseClient
+                    .from('masini')
+                    .update({
+                        vizualizari: 0,
+                        clickuriTelefon: 0
+                    })
+                    .eq('id', id);
+
+                if (error) {
+                    alert("Eroare la resetarea datelor: " + error.message);
+                    return;
+                }
+
+                alert("Statisticile au fost luate de la 0!");
+                await afiseazaAnunturiStergere();
+            }
+        }
+
+        async function stergeAnunt(id) {
+            if(confirm("Ștergi definitiv anunțul de pe internet?")) {
+                const { error } = await supabaseClient
+                    .from('masini')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    alert("Nu s-a putut șterge: " + error.message);
+                    return;
+                }
+
+                if (idMasinaEditata === id) {
+                    reseteazaFormularComplet();
+                }
+                
+                await afiseazaAnunturiStergere();
+            }
+        }
+    </script>
+</body>
+</html>
